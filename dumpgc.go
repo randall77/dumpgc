@@ -71,6 +71,9 @@ func printFunc(fp pointer[_func], m moduledata) {
 	name := f.name(m)
 	fmt.Printf("function: %s\n", name)
 	fmt.Printf("\tentry: %x\n", entry)
+	if f := f.flag.String(); f != "" {
+		fmt.Printf("\tflags: %s\n", f)
+	}
 	if f.args != 0 { // TODO: sometimes 0x80000000? never used?
 		fmt.Printf("\targbytes: %d\n", f.args)
 	}
@@ -187,6 +190,9 @@ func printFunc(fp pointer[_func], m moduledata) {
 				p: p.offset(unsafe.Offsetof(stackmap{}.bytedata) + uintptr(nbyte*i)),
 			}
 			argMaps = append(argMaps, b.String())
+			if i == 0 {
+				fmt.Printf("\tentry args@%s: %s\n", spOff(argp-frameSize), b.String())
+			}
 		}
 	}
 	var localMaps []string
@@ -209,9 +215,7 @@ func printFunc(fp pointer[_func], m moduledata) {
 		for _, e := range data {
 			idx := e.val
 			if idx == -1 {
-				// TODO: or select 0 instead?
-				fmt.Printf("\t\t[%x:%x]: none\n", e.min, e.max-1)
-				continue
+				idx = 0 // entry map
 			}
 			fmt.Printf("\t\t[%x:%x]: args:%s locals:%s\n", e.min, e.max-1, argMaps[idx], localMaps[idx])
 		}
@@ -487,6 +491,20 @@ type _func struct {
 type abi_FuncID uint8
 type abi_FuncFlag uint8
 
+func (f abi_FuncFlag) String() string {
+	var flags []string
+	if f&abi_FuncFlagTopFrame != 0 {
+		flags = append(flags, "topframe")
+	}
+	if f&abi_FuncFlagSPWrite != 0 {
+		flags = append(flags, "spwrite")
+	}
+	if f&abi_FuncFlagAsm != 0 {
+		flags = append(flags, "asm")
+	}
+	return strings.Join(flags, ",")
+}
+
 const (
 	abi_PCDATA_UnsafePoint   = 0
 	abi_PCDATA_StackMapIndex = 1
@@ -500,6 +518,11 @@ const (
 	abi_FUNCDATA_ArgsPointerMaps   = 0
 	abi_FUNCDATA_LocalsPointerMaps = 1
 	abi_FUNCDATA_StackObjects      = 2
+)
+const (
+	abi_FuncFlagTopFrame abi_FuncFlag = 1 << iota
+	abi_FuncFlagSPWrite
+	abi_FuncFlagAsm
 )
 
 type stackmap struct {
