@@ -244,6 +244,13 @@ func printFunc(fp pointer[_func], m moduledata) {
 			fmt.Printf("\t\t%s size:%d ptrbytes:%d, mask:%s\n", spOff(sp), obj.size, obj.ptrBytes, b.String())
 		}
 	}
+
+	if p := funcdata(fp, abi_FUNCDATA_OpenCodedDeferInfo, m); p != 0 {
+		var mask, slots uint32
+		p, mask = decodeUvarint(p)
+		p, slots = decodeUvarint(p)
+		fmt.Printf("\topen-coded defers, bitmask:%s slots:%s\n", spOff(varp-uintptr(int(mask))), spOff(varp-uintptr(int(slots))))
+	}
 }
 
 // In order to better eyeball-match offsets from SP with offsets
@@ -515,9 +522,10 @@ const (
 	abi_UnsafePointRestart2       = -4
 	abi_UnsafePointRestartAtEntry = -5
 
-	abi_FUNCDATA_ArgsPointerMaps   = 0
-	abi_FUNCDATA_LocalsPointerMaps = 1
-	abi_FUNCDATA_StackObjects      = 2
+	abi_FUNCDATA_ArgsPointerMaps    = 0
+	abi_FUNCDATA_LocalsPointerMaps  = 1
+	abi_FUNCDATA_StackObjects       = 2
+	abi_FUNCDATA_OpenCodedDeferInfo = 4
 )
 const (
 	abi_FuncFlagTopFrame abi_FuncFlag = 1 << iota
