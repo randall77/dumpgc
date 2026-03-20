@@ -431,19 +431,19 @@ type moduledata struct {
 	findfunctab  uintptr
 	minpc, maxpc uintptr
 
-	text, etext           uintptr
-	noptrdata, enoptrdata uintptr
-	data, edata           uintptr
-	bss, ebss             uintptr
-	noptrbss, enoptrbss   uintptr
-	covctrs, ecovctrs     uintptr
-	end, gcdata, gcbss    uintptr
-	types, etypes         uintptr
-	rodata                uintptr
-	gofunc                uintptr // go.func.*
+	text, etext                uintptr
+	noptrdata, enoptrdata      uintptr
+	data, edata                uintptr
+	bss, ebss                  uintptr
+	noptrbss, enoptrbss        uintptr
+	covctrs, ecovctrs          uintptr
+	end, gcdata, gcbss         uintptr
+	types, typedesclen, etypes uintptr
+	rodata                     uintptr
+	gofunc                     uintptr // go.func.*
+	epclntab                   uintptr
 
 	textsectmap slice[textsect]
-	typelinks   slice[int32] // offsets from types
 	itablinks   slice[pointer[itab]]
 
 	ptab slice[ptabEntry]
@@ -463,7 +463,7 @@ type moduledata struct {
 
 	gcdatamask, gcbssmask bitvector
 
-	typemap map_[typeOff, pointer[_type]] // offset to *_rtype in previous module
+	typemap map_[pointer[_type], pointer[_type]] // offset to *_rtype in previous module
 
 	next pointer[moduledata]
 }
