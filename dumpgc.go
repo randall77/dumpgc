@@ -415,7 +415,7 @@ func (inf inferiorMacho) read(addr, size uintptr) []byte {
 }
 
 // +----------------------------------------------------------------+
-// | This section is copied directly from the runtime (circa 1.24). |
+// | This section is copied directly from the runtime (circa 1.27). |
 // +----------------------------------------------------------------+
 
 // We replace *T with pointer[T], []T with slice[T], and map[K]V with map_[K,V].
