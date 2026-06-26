@@ -57,7 +57,7 @@ func main() {
 	// (The last entry is a dummy with its entryoff marking the end of Go code.)
 	for i := uintptr(0); i < m.ftab.len-1; i++ {
 		ftabEntry := m.ftab.elem(i)
-		fp := cast[*byte, *_func](m.pclntable.elemAddr(uintptr(ftabEntry.funcoff)))
+		fp := m.pclntable.elemAddr(uintptr(ftabEntry.funcoff)).cast[*_func]()
 		if funcName != "" && fp.deref().name(m) != funcName { // Filter on function name.
 			continue
 		}
@@ -182,7 +182,7 @@ func printFunc(fp pointer[_func], m moduledata) {
 	// Pointer maps.
 	var argMaps []string
 	if p := funcdata(fp, abi_FUNCDATA_ArgsPointerMaps, m); p != 0 {
-		args := cast[*byte, *stackmap](p).deref()
+		args := p.cast[*stackmap]().deref()
 		nbyte := (args.nbit + 7) / 8
 		for i := int32(0); i < args.n; i++ {
 			b := bitmask{
@@ -198,7 +198,7 @@ func printFunc(fp pointer[_func], m moduledata) {
 	var localMaps []string
 	var localMapSize uintptr
 	if p := funcdata(fp, abi_FUNCDATA_LocalsPointerMaps, m); p != 0 {
-		locals := cast[*byte, *stackmap](p).deref()
+		locals := p.cast[*stackmap]().deref()
 		nbyte := (locals.nbit + 7) / 8
 		for i := int32(0); i < locals.n; i++ {
 			b := bitmask{
@@ -223,8 +223,8 @@ func printFunc(fp pointer[_func], m moduledata) {
 
 	// Stack objects
 	if p := funcdata(fp, abi_FUNCDATA_StackObjects, m); p != 0 {
-		n := cast[*byte, *uintptr](p).deref()
-		objs := cast[*byte, *stackObjectRecord](p.offset(ptrSize)).extend(n)
+		n := p.cast[*uintptr]().deref()
+		objs := p.offset(ptrSize).cast[*stackObjectRecord]().extend(n)
 		fmt.Printf("\tstack objects:\n")
 		for i := uintptr(0); i < objs.len; i++ {
 			obj := objs.elem(i)
@@ -282,8 +282,7 @@ func (p pointer[T]) deref() T {
 }
 
 // cast converts from a *T to a *U.
-// (It would be nice to make this as a method on pointer[T] parameterized by U, but we can't.)
-func cast[TP *T, UP *U, T, U any](p pointer[T]) pointer[U] {
+func (p pointer[T]) cast[P *U, U any]() pointer[U] {
 	return pointer[U](p)
 }
 
@@ -586,7 +585,7 @@ func pcdata(fp pointer[_func], tab uint32, m moduledata) pointer[byte] {
 		return 0
 	}
 	off := unsafe.Offsetof(_func{}.nfuncdata) + unsafe.Sizeof(_func{}.nfuncdata) + uintptr(tab)*4
-	off2 := cast[*_func, *uint32](fp.offset(off)).deref()
+	off2 := fp.offset(off).cast[*uint32]().deref()
 	if off2 == 0 {
 		return 0
 	}
@@ -600,7 +599,7 @@ func funcdata(fp pointer[_func], idx uint8, m moduledata) pointer[byte] {
 		return 0
 	}
 	off := unsafe.Offsetof(_func{}.nfuncdata) + unsafe.Sizeof(_func{}.nfuncdata) + uintptr(f.npcdata)*4 + uintptr(idx)*4
-	off2 := cast[*_func, *uint32](fp.offset(off)).deref()
+	off2 := fp.offset(off).cast[*uint32]().deref()
 	if off2 == ^uint32(0) {
 		return 0
 	}
